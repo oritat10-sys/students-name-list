@@ -1,3 +1,4 @@
+<script>
 const gulp = require("gulp");
 const replace = require("gulp-replace");
 const rename = require("gulp-rename");
@@ -139,3 +140,4 @@ gulp.task("to-local", gulp.series("gas-to-css", "gas-to-js", "gas-to-html", "gas
 gulp.task("watch", function () {
     gulp.watch(["*.html", "*.css", "*.js"], gulp.series("to-gas"));
 });
+</script>
