@@ -23,6 +23,11 @@ function showMessage(message, type = 'error') {
     if (type === 'success') {
         successDiv.classList.remove('hidden');
         errorDiv.classList.add('hidden');
+        // When showing the message
+        successDiv.scrollIntoView({
+            behavior: 'smooth',
+            block: 'center'
+        });
     } else {
         errorText.textContent = message;
         errorDiv.classList.remove('hidden');
@@ -93,8 +98,6 @@ function submitForm() {
         formData.responses.push(collectResponseData(form))
     }
 
-    console.log("formData: ", formData);
-
     // Send data to Google Apps Script
     try {
         google.script.run
@@ -112,18 +115,12 @@ function onFormSubmitSuccess(result) {
 
     // Reset submit button
     const submitBtn = document.getElementById('submitBtn');
-    const originalText = 'שלח טופס';
+    const originalText = 'טופס נשלח בהצלחה';
     submitBtn.textContent = originalText;
-    submitBtn.disabled = false;
 
-    if (result.success) {
-        // Hide form and show success message
-        document.getElementById('mainForm').classList.add('hidden');
-        document.getElementById('successMessage').classList.remove('hidden');
-        document.getElementById('errorMessageBottom').classList.add('hidden');
-    } else {
-        showMessage(result.message || 'שגיאה בשמירת הנתונים');
-    }
+    disableForm();
+
+    showMessage(result.message || 'שגיאה בשמירת הנתונים', 'success');
 }
 
 function onFormSubmitError(error) {
@@ -138,6 +135,42 @@ function onFormSubmitError(error) {
     showMessage('שגיאה בשליחת הטופס: ' + (error.message || error));
 }
 
+function disableForm() {
+    // Disable all input elements (text, email, number, password, etc.)
+    const inputs = document.querySelectorAll('input');
+    inputs.forEach(input => {
+        input.disabled = true;
+        input.readOnly = true; // Extra protection for text inputs
+    });
+
+    // Disable all textareas
+    const textareas = document.querySelectorAll('textarea');
+    textareas.forEach(textarea => {
+        textarea.disabled = true;
+        textarea.readOnly = true;
+    });
+
+    // Disable all select dropdowns
+    const selects = document.querySelectorAll('select');
+    selects.forEach(select => {
+        select.disabled = true;
+    });
+
+    // Disable all buttons
+    const buttons = document.querySelectorAll('button');
+    buttons.forEach(button => {
+        button.disabled = true;
+    });
+
+    // Optional: Add visual indication that form is disabled
+    const form = document.querySelector('form');
+    if (form) {
+        form.style.opacity = '0.6';
+        form.style.cursor = 'not-allowed';
+    }
+}
+
+
 function collectResponseData(form) {
     const responseData = {
         responseType: form.querySelector("[id*='helpType']").value,
@@ -146,13 +179,6 @@ function collectResponseData(form) {
         hour: form.querySelector("[id*='hour']").value,
         students: parseStudentData(form.querySelectorAll('input[type="checkbox"]:checked'))
     };
-    console.log(responseData);
-
-    // const students = form.querySelectorAll('input[type="checkbox"]:checked');
-
-    // const parsedStudent = DataparseStudentData(students)
-    // console.log('students: ', parsedStudent);
-
 
     return responseData;
 }

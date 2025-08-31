@@ -3,6 +3,8 @@ const replace = require("gulp-replace");
 const rename = require("gulp-rename");
 const fs = require("fs");
 
+// TODO: fix problem with `code.js` and .gs
+
 // ===============================
 // Local → GAS
 // ===============================

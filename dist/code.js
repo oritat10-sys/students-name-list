@@ -22,6 +22,7 @@ function doGet() {
   return HtmlService.createTemplateFromFile('index.html')
     .evaluate()
     .setSandboxMode(HtmlService.SandboxMode.IFRAME)
+    .addMetaTag('viewport', 'width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1')
     .setTitle('מענים בית ספריים תשפ"ו')
     .setFaviconUrl('https://www.gstatic.com/images/branding/product/1x/sheets_24dp.png');
 }
@@ -199,44 +200,11 @@ function test() {
     responses: [
       {
         responseType: "שילוב",
-        grade: "ט",
-        classes: ["7"],
         students: [
-          { name: "דן אל על" },
-          { name: "אור אלון" },
-          { name: "לירי דניאל אלטר" },
-          { name: "אלון אפשני" },
-          { name: "דביר ביטון" },
-          { name: "גלי בירן" },
-          { name: "עידו בנדו" },
-          { name: "יאיר גדרון" },
-          { name: "טל גרשוביץ" },
-          { name: "דריה דור" },
-          { name: "גל הלמן" },
-          { name: "עידו וולף" },
-          { name: "רוני וקסלר" },
-          { name: "שירה חממי" },
-          { name: "אלה יניב" },
-          { name: "יובל יצחקי" },
-          { name: "נויה יצחקי" },
-          { name: "עינב כהן" },
-          { name: "ליבי כץ" },
-          { name: "עידן לוי" },
-          { name: "עופרי לוין" },
-          { name: "תמר ליבוב" },
-          { name: "ליאן מזרחי" },
-          { name: "שליו מיכאלי" },
-          { name: "שלי מינביץ'" },
-          { name: "יונתן סבח" },
-          { name: "אלמוג עטון" },
-          { name: "איתי פרונוב" },
-          { name: "שי צברי" },
-          { name: "מיה צ'יקאידזה" },
-          { name: "ספיר צפניה" },
-          { name: "מיקה קלימברג" },
-          { name: "יהב קסוס" },
-          { name: "שי רובין" },
-          { name: "אלייה שיפמן" }
+          { name: "דן אל על", class: "7", grade: "ט" },
+          { name: "אור אלון", class: "7", grade: "ט" },
+          { name: "לירי דניאל אלטר", class: "7", grade: "ט" },
+          { name: "עידן אליהו", class: "7", grade: "ח" }
         ],
         day: "ראשון",
         hour: "2"
@@ -260,12 +228,16 @@ function saveFormData(formData) {
     // שלב 1: שמירה בגליונות הכיתות
     const classResults = saveToClassSheets(spreadsheet, formData, timestamp);
 
-    // שלב 2: שמירה בגיליון הסיכום (גיליון 22)
-    const summaryResults = saveToSummarySheet(spreadsheet, formData, timestamp);
+    // שלב 2: שמירה בגיליון הסיכום עם תוצאות העדכון
+    const summaryResults = saveToSummarySheet(spreadsheet, formData, timestamp, classResults);
+
+    const hasErrors = classResults.some(result => !result.success);
 
     return {
-      success: true,
-      message: 'הנתונים נשמרו בהצלחה בכל הגליונות!',
+      success: !hasErrors,
+      message: hasErrors ?
+        'הנתונים נשמרו חלקית - חלק מהגליונות לא נמצאו' :
+        'הנתונים נשמרו בהצלחה בכל הגליונות!',
       classUpdates: classResults,
       summaryRecords: summaryResults,
       timestamp: timestamp.toLocaleString('he-IL')
@@ -287,23 +259,32 @@ function saveToClassSheets(spreadsheet, formData, timestamp) {
   const results = [];
 
   formData.responses.forEach((response, responseIndex) => {
-    const grade = response.grade;
+    // Group students by their class
+    const studentsByClass = {};
 
-    response.classes.forEach(classNum => {
-      const sheetName = grade + classNum;
-      const sheet = spreadsheet.getSheetByName(sheetName);
+    response.students.forEach(student => {
+      const className = student.grade + student.class;
+      if (!studentsByClass[className]) {
+        studentsByClass[className] = [];
+      }
+      studentsByClass[className].push(student);
+    });
+
+    // Process each class group
+    Object.keys(studentsByClass).forEach(className => {
+      const sheet = spreadsheet.getSheetByName(className);
 
       if (!sheet) {
-        console.error(`גיליון ${sheetName} לא נמצא`);
+        console.error(`גיליון ${className} לא נמצא`);
         results.push({
           success: false,
-          sheetName: sheetName,
-          message: `גיליון ${sheetName} לא נמצא`
+          sheetName: className,
+          message: `גיליון ${className} לא נמצא`
         });
         return;
       }
 
-      console.log(`מעבד גיליון: ${sheetName}`);
+      console.log(`מעבד גיליון: ${className}`);
 
       const data = sheet.getDataRange().getValues();
       let updatedStudents = 0;
@@ -315,8 +296,8 @@ function saveToClassSheets(spreadsheet, formData, timestamp) {
         return;
       }
 
-      // עדכון כל תלמיד
-      response.students.forEach(student => {
+      // עדכון כל תלמיד בכיתה זו
+      studentsByClass[className].forEach(student => {
         const studentRowIndex = findStudentInSheet(data, student.name);
 
         if (studentRowIndex !== -1) {
@@ -329,17 +310,17 @@ function saveToClassSheets(spreadsheet, formData, timestamp) {
           updatedStudents++;
           console.log(`עודכן תלמיד: ${student.name} בעמודה ${String.fromCharCode(67 + columnIndex)}`);
         } else {
-          console.warn(`תלמיד ${student.name} לא נמצא בגיליון ${sheetName}`);
+          console.warn(`תלמיד ${student.name} לא נמצא בגיליון ${className}`);
         }
       });
 
       results.push({
         success: true,
-        sheetName: sheetName,
+        sheetName: className,
         studentsUpdated: updatedStudents,
         responseType: response.responseType,
         subject: response.subject || '',
-        message: `עודכנו ${updatedStudents} תלמידים בגיליון ${sheetName}`
+        message: `עודכנו ${updatedStudents} תלמידים בגיליון ${className}`
       });
     });
   });
@@ -354,10 +335,10 @@ function getResponseColumnIndex(responseType, subject) {
   // מיפוי עמודות (אינדקס מתחיל מ-0, עמודה C = אינדקס 2)
   const columnMapping = {
     // פרטני לפי מקצועות
-    'פרטני_אנגלית': 2,      // עמודה C
-    'פרטני_מתמטיקה': 3,     // עמודה D
-    'פרטני_מדעים': 4,       // עמודה E
-    'פרטני_ערבית': 5,       // עמודה F
+    'פרטני-אנגלית': 2,      // עמודה C
+    'פרטני-מתמטיקה': 3,     // עמודה D
+    'פרטני-מדעים': 4,       // עמודה E
+    'פרטני-ערבית': 5,       // עמודה F
 
     // מענים אחרים
     'סל אישי': 6,            // עמודה G
@@ -463,7 +444,7 @@ function updateTeacherInfo(sheet, row, teacherName, responseType, subject) {
 /**
  * שמירה בגיליון הסיכום (גיליון 22)
  */
-function saveToSummarySheet(spreadsheet, formData, timestamp) {
+function saveToSummarySheet(spreadsheet, formData, timestamp, classUpdateResults = []) {
   const summarySheetName = 'סיכום מענים';
   let summarySheet = spreadsheet.getSheetByName(summarySheetName);
 
@@ -475,24 +456,39 @@ function saveToSummarySheet(spreadsheet, formData, timestamp) {
 
   const rowsToAdd = [];
 
-  // הוספת כל מענה כשורה נפרדת
+  // Create a map of errors by class
+  const errorsByClass = {};
+  classUpdateResults.forEach(result => {
+    if (!result.success) {
+      errorsByClass[result.sheetName] = result.message;
+    }
+  });
+
+  // הוספת כל תלמיד כשורה נפרדת
   formData.responses.forEach(response => {
-    response.classes.forEach(classNum => {
-      const studentsNames = response.students.map(student => student.name).join(', ');
+    response.students.forEach(student => {
       const subject = response.subject || '';
       const fullResponseType = response.responseType + (subject ? ' - ' + subject : '');
+      const className = student.grade + student.class;
+
+      // Check if there was an error for this class
+      const hasError = errorsByClass[className];
+      const status = hasError ? 'שגיאה' : 'הצלחה';
+      const errorMessage = hasError || '';
 
       const rowData = [
-        timestamp,                    // תאריך שליחה
-        formData.teacherName,        // שם מלא המורה
-        fullResponseType,            // סוג מענה
-        subject,                     // מקצוע (אם פרטני)
-        response.grade,              // שכבה
-        response.grade + classNum,   // כיתה
-        studentsNames,               // תלמידים
-        response.day,                // יום
-        response.hour,               // שעה
-        response.students.length     // מספר תלמידים
+        timestamp,                           // תאריך שליחה
+        formData.teacherName,               // שם מלא המורה
+        fullResponseType,                   // סוג מענה
+        subject,                            // מקצוע (אם פרטני)
+        student.grade,                      // שכבה
+        className,                          // כיתה
+        student.name,                       // תלמיד
+        response.day,                       // יום
+        response.hour,                      // שעה
+        1,                                  // מספר תלמידים
+        status,                             // סטטוס
+        errorMessage                        // הודעת שגיאה
       ];
 
       rowsToAdd.push(rowData);
@@ -502,7 +498,8 @@ function saveToSummarySheet(spreadsheet, formData, timestamp) {
   // הוספת השורות
   if (rowsToAdd.length > 0) {
     const lastRow = summarySheet.getLastRow();
-    summarySheet.getRange(lastRow + 1, 1, rowsToAdd.length, 10).setValues(rowsToAdd);
+    // Note: Now we have 12 columns instead of 10
+    summarySheet.getRange(lastRow + 1, 1, rowsToAdd.length, 12).setValues(rowsToAdd);
 
     // עיצוב השורות החדשות
     formatSummaryRows(summarySheet, lastRow + 1, rowsToAdd.length);
@@ -510,7 +507,8 @@ function saveToSummarySheet(spreadsheet, formData, timestamp) {
 
   return {
     recordsAdded: rowsToAdd.length,
-    message: `נוספו ${rowsToAdd.length} רשומות לגיליון הסיכום`
+    message: `נוספו ${rowsToAdd.length} רשומות לגיליון הסיכום`,
+    hasErrors: Object.keys(errorsByClass).length > 0
   };
 }
 
@@ -528,7 +526,9 @@ function setupSummarySheet(sheet) {
     'תלמידים',
     'יום',
     'שעה',
-    'מספר תלמידים'
+    'מספר תלמידים',
+    'סטטוס',           // New column
+    'הודעת שגיאה'      // New column
   ];
 
   sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
@@ -551,22 +551,33 @@ function setupSummarySheet(sheet) {
   sheet.setColumnWidth(8, 80);  // יום
   sheet.setColumnWidth(9, 80);  // שעה
   sheet.setColumnWidth(10, 120); // מספר תלמידים
+  sheet.setColumnWidth(11, 80); // סטטוס
+  sheet.setColumnWidth(12, 200); // הודעת שגיאה
 }
 
 /**
  * עיצוב שורות בגיליון הסיכום
  */
 function formatSummaryRows(sheet, startRow, numRows) {
-  const range = sheet.getRange(startRow, 1, numRows, 10);
+  const range = sheet.getRange(startRow, 1, numRows, 12); // Changed to 12 columns
 
   // עיצוב בסיסי
   range.setHorizontalAlignment('right');
   range.setBorder(true, true, true, true, true, true);
 
-  // צביעת שורות לחלופין
+  // צביעת שורות והדגשת שגיאות
   for (let i = 0; i < numRows; i++) {
-    const rowRange = sheet.getRange(startRow + i, 1, 1, 10);
-    if ((startRow + i) % 2 === 0) {
+    const rowRange = sheet.getRange(startRow + i, 1, 1, 12);
+    const statusCell = sheet.getRange(startRow + i, 11); // Status column
+    const statusValue = statusCell.getValue();
+
+    if (statusValue === 'שגיאה') {
+      // Highlight error rows in light red
+      rowRange.setBackground('#fee2e2');
+      statusCell.setFontColor('#dc2626');
+      statusCell.setFontWeight('bold');
+    } else if ((startRow + i) % 2 === 0) {
+      // Regular alternating colors for non-error rows
       rowRange.setBackground('#f1f5f9');
     }
   }
@@ -574,43 +585,6 @@ function formatSummaryRows(sheet, startRow, numRows) {
   // עיצוב עמודת התאריך
   const dateRange = sheet.getRange(startRow, 1, numRows, 1);
   dateRange.setNumberFormat('dd/MM/yyyy HH:mm');
-}
-
-/**
- * פונקציה לבדיקה עם הדוגמה שלך
- */
-function testNewSaveFunction() {
-  const formData = {
-    teacherName: "יולי בכמן",
-    responses: [
-      {
-        responseType: "פרטני",
-        subject: "מתמטיקה",
-        grade: "ט",
-        classes: ["7"],
-        students: [
-          { name: "דן אל על" },
-          { name: "אור אלון" },
-          { name: "גלי בירן" }
-        ],
-        day: "ראשון",
-        hour: "08:00"
-      },
-      {
-        responseType: "שילוב",
-        grade: "ט",
-        classes: ["7"],
-        students: [
-          { name: "עידו בנדו" },
-          { name: "יאיר גדרון" }
-        ],
-        day: "שלישי",
-        hour: "10:15"
-      }
-    ]
-  };
-
-  return saveFormData(formData);
 }
 
 /**
