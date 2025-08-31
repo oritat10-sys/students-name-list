@@ -1,0 +1,23 @@
+{
+  "name": "students-name-list",
+  "version": "1.0.0",
+  "description": "",
+  "main": "script1.js",
+  "scripts": {
+    "dev": "gulp watch",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "gas": "gulp to-gas",
+    "local": "gulp to-local",
+    "push": "gulp to-gas && clasp push",
+    "pull": "clasp pull && gulp to-local"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "gulp": "^5.0.1",
+    "gulp-rename": "^2.1.0",
+    "gulp-replace": "^1.1.4"
+  }
+}
