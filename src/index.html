@@ -7,8 +7,8 @@
     <title>מענים בית ספריים תשפ"ו</title>
     <script src="https://cdn.tailwindcss.com"></script>
 
-    <link rel="stylesheet" href="styles.css">
-    <link rel="stylesheet" href="styles_background.css">
+    <?!= include('styles'); ?>
+    <?!= include('styles_background'); ?>
 </head>
 
 <body class="min-h-screen">
@@ -134,11 +134,11 @@
             <div id="formContainer"></div>
 
         </div>
-        <script src="fallback_students.js"></script>
-        <script src="form.js"></script>
-        <script src="script_form.js"></script>
-        <script src="script.js"></script>
-        <script src="load_students.js"></script>
+        <?!= include('fallback_students'); ?>
+        <?!= include('form'); ?>
+        <?!= include('script_form'); ?>
+        <?!= include('script'); ?>
+        <?!= include('load_students'); ?>
         
 </body>
 

@@ -1,3 +1,4 @@
+
 @import url("https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;600;700&display=swap");
 
 body {
@@ -288,5 +289,6 @@ body {
     z-index: 1000;
     flex-direction: column;
 }
+
 
 

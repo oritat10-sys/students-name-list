@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>מענים בית ספריים תשפ"ו</title>
+    
+
+    <?!= include('styles'); ?>
+    <?!= include('styles_background'); ?>
+</head>
+
+<body class="min-h-screen">
+    <!-- Loading overlay -->
+    <div id="loadingOverlay" class="loading-overlay">
+        <div class="loading-spinner"></div>
+        <p class="mt-4 text-sky-700 font-medium">טוען נתוני תלמידים...</p>
+    </div>
+
+    <!-- Background animation elements -->
+    <div class="bg-animation">
+        <div class="bg-bubble"></div>
+        <div class="bg-bubble"></div>
+        <div class="bg-bubble"></div>
+        <div class="bg-bubble"></div>
+        <div class="bg-bubble"></div>
+        <div class="light-beam"></div>
+        <div class="light-beam"></div>
+    </div>
+
+    <div class="container mx-auto px-4 py-8 max-w-4xl relative z-10">
+        <!-- Header with Logo -->
+        <div class="flex justify-between items-center mb-2">
+            <div class="logo-container transform -translate-x-10">
+                <img src="https://barlev.mashov.info/wp-content/uploads/sites/93/2023/06/%D7%9C%D7%95%D7%92%D7%95-%D7%91%D7%A8-%D7%9C%D7%91-%D7%9B%D7%A4%D7%A1.png"
+                    alt="סמליל בר-לב" class="w-16 h-16">
+            </div>
+            <div class="text-center">
+                <h1 class="text-3xl font-bold text-sky-700">מענים בית ספריים תשפ"ו</h1>
+                <h2 class="text-xl font-medium text-sky-600 mt-1">חטיבת בר-לב</h2>
+            </div>
+            <div class="w-16"></div> <!-- Spacer for alignment -->
+        </div>
+        <!-- Error Message (Initially Hidden) -->
+        <div id="errorMessage"
+            class="hidden glass-container border-l-4 border-red-500 text-red-700 p-6 rounded-lg shadow-lg">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <svg class="h-8 w-8 text-red-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"
+                        fill="currentColor">
+                        <path fill-rule="evenodd"
+                            d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                            clip-rule="evenodd" />
+                    </svg>
+                </div>
+                <div class="mr-3">
+                    <p class="text-xl font-bold">שגיאה!</p>
+                    <p class="text-lg mt-2" id="errorText">אירעה שגיאה בעת שליחת הטופס</p>
+                </div>
+            </div>
+        </div>
+        <!-- Main Form -->
+        <div id="mainForm" class="glass-container rounded-lg shadow-lg p-6 mb-8 mt-6">
+            <div class="form-section">
+                <div class="form-control">
+                    <label for="teacherName" class="input-label">שם מלא (פרטי + משפחה)
+                        <span class="text-red-500">*</span></label>
+                    <input type="text" id="teacherName" class="input-field" required>
+                </div>
+            </div>
+
+            <!-- Response Sections Container -->
+            <div>
+                <div id="responseSectionsContainer"></div>
+                <!-- Add Additional Response Button -->
+                <div class="form-section">
+                    <button id="addResponseBtn"
+                        class="flex items-center justify-center w-full p-3 bg-sky-100 text-sky-700 rounded-lg hover:bg-sky-200 transition-all hover:shadow-md">
+                        <svg class="w-5 h-5 mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="12" y1="5" x2="12" y2="19"></line>
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                        </svg>
+                        הוספת מענה נוסף שאני נותן
+                    </button>
+                </div>
+                <!-- Submit Button -->
+                <div class="form-section">
+                    <button id="submitBtn"
+                        class="w-full p-4 bg-sky-500 text-white font-bold rounded-lg hover:bg-sky-600 transition-all btn-primary">
+                        שלח טופס
+                    </button>
+                </div>
+            </div>
+
+            <!-- Success Message (Initially Hidden) -->
+            <div id="successMessage"
+                class="hidden glass-container border-l-4 border-green-500 text-green-700 p-6 rounded-lg shadow-lg success-message">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <svg class="h-8 w-8 text-green-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"
+                            fill="currentColor">
+                            <path fill-rule="evenodd"
+                                d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                                clip-rule="evenodd" />
+                        </svg>
+                    </div>
+                    <div class="mr-3">
+                        <p class="text-xl font-bold">תודה שמילאת את טופס המענים הבית ספריים!</p>
+                        <p class="text-lg mt-2">המידע נשמר בהצלחה.</p>
+                    </div>
+                </div>
+            </div>
+            <div id="errorMessageBottom"
+                class="hidden glass-container border-l-4 border-red-500 text-red-700 p-6 rounded-lg shadow-lg">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <svg class="h-8 w-8 text-red-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"
+                            fill="currentColor">
+                            <path fill-rule="evenodd"
+                                d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                                clip-rule="evenodd" />
+                        </svg>
+                    </div>
+                    <div class="mr-3">
+                        <p class="text-xl font-bold">שגיאה!</p>
+                        <p class="text-lg mt-2" id="errorText">אירעה שגיאה בעת שליחת הטופס</p>
+                    </div>
+                </div>
+            </div>
+
+
+            <div id="formContainer"></div>
+
+        </div>
+        <?!= include('fallback_students'); ?>
+        <?!= include('form'); ?>
+        <?!= include('script_form'); ?>
+        <?!= include('script'); ?>
+        <?!= include('load_students'); ?>
+        
+</body>
+
+</html>

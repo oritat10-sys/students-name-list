@@ -2,99 +2,118 @@ const gulp = require("gulp");
 const replace = require("gulp-replace");
 const rename = require("gulp-rename");
 const fs = require("fs");
+const through2 = require("through2");
 
-// TODO: fix problem with `code.js` and .gs
+const dist = "dist";
+const src = "src";
 
 // ===============================
 // Local → GAS
 // ===============================
 
-// Convert local CSS → GAS HTML
+// Convert local CSS → GAS HTML (wrap in <style>)
 gulp.task("css-to-gas", function () {
-    return gulp.src("*.css") // take all CSS files
+    return gulp.src(`${src}/*.css`, { allowEmpty: true })
         .pipe(replace(/([\s\S]*)/, "<style>\n$1\n</style>"))
         .pipe(rename(function (path) {
             path.extname = ".html"; // change output extension to .html
         }))
-        .pipe(gulp.dest("dist"));
+        .pipe(gulp.dest(dist));
 });
 
-// Convert local JS → GAS HTML
+// Convert local JS → GAS HTML (wrap in <script>), except code.js
 gulp.task("js-to-gas", function () {
-    return gulp.src(["*.js", "!code.js"])
+    return gulp.src([`${src}/*.js`, `!${src}/code.js`], { allowEmpty: true })
         .pipe(replace(/([\s\S]*)/, "<script>\n$1\n</script>"))
         .pipe(rename(function (path) {
-            path.extname = ".html"; // change output extension to .html
+            path.extname = ".html"; // frontend JS → .html
         }))
-        .pipe(gulp.dest("dist"));
+        .pipe(gulp.dest(dist));
 });
 
-// Convert local index.html → GAS (replace <link>/<script> with GAS includes)
+// Convert local code.js → code.gs (backend GAS file)
+gulp.task("js-to-gs", function () {
+    return gulp.src(`${src}/code.js`, { allowEmpty: true })
+        .pipe(rename(function (path) {
+            path.extname = ".gs";   // just rename extension
+        }))
+        .pipe(gulp.dest(dist));
+});
+
+// Convert local index.html → GAS-style (replace <link>/<script> with includes)
 gulp.task("html-to-gas", function () {
-    return gulp.src("index.html")
+    return gulp.src(`${src}/index.html`, { allowEmpty: true })
         // Replace any CSS link:
         .pipe(replace(
             /<link rel="stylesheet" href="([^"]+)\.css"\s*\/?>/g,
-            function (match, p1) {
-                return "<?!= include('" + p1 + "'); ?>";
-            }
+            (_, p1) => `<?!= include('${p1}'); ?>`
         ))
         // Replace any JS script:
         .pipe(replace(
             /<script src="([^"]+)\.js"><\/script>/g,
-            function (match, p1) {
-                return "<?!= include('" + p1 + "'); ?>";
-            }
+            (_, p1) => `<?!= include('${p1}'); ?>`
         ))
-        .pipe(gulp.dest("dist"));
+        .pipe(gulp.dest(dist));
 });
 
 // Copy other assets (images, json, etc.)
 gulp.task("assets-to-gas", function () {
     return gulp.src([
-        "**/*",                     // everything
-        "!index.html",              // exclude main index
-        "!*.css",                   // exclude raw CSS
-        "!*.js",               // exclude raw JS
-        "!gulpfile.js",             // exclude gulpfile
-        "!package*.json",           // exclude npm files
-        "!node_modules/**",         // exclude node_modules
-        "!dist/**",                 // exclude dist folder (avoid recursion)
-        "!.clasp.json"              // exclude clasp config
-    ])
-        .pipe(gulp.dest("dist"));
+        `${src}/**/*`,            // everything inside src
+        `!${src}/index.html`,     // exclude main index
+        `!${src}/*.css`,          // CSS handled separately
+        `!${src}/*.js`,           // JS handled separately
+    ], { allowEmpty: true })
+        .pipe(gulp.dest(dist));
 });
 
-// Grouped
-gulp.task("to-gas", gulp.series("css-to-gas", "js-to-gas", "html-to-gas", "assets-to-gas"));
+// Grouped conversion
+gulp.task("to-gas",
+    gulp.series("css-to-gas", "js-to-gas", "js-to-gs", "html-to-gas", "assets-to-gas")
+);
 
 
 // ===============================
 // GAS → Local (reverse process)
 // ===============================
 
-// Convert GAS styles.html → local styles.css
+// Convert any HTML with <style> tags → CSS, keeping same base name
 gulp.task("gas-to-css", function () {
-    return gulp.src("dist/*.html") // grab all HTML style files
-        .pipe(replace(/<\/?style>/g, "")) // remove <style> tags
-        .pipe(rename(function (path) {
-            // change `.html` extension → `.css`
-            path.extname = ".css";
+    return gulp.src(`${dist}/*.html`, { allowEmpty: true })
+        .pipe(through2.obj(function (file, _, cb) {
+            const contents = file.contents.toString();
+            if (/<style[\s\S]*?>[\s\S]*?<\/style>/i.test(contents)) {
+                this.push(file);
+            }
+            cb();
         }))
-        .pipe(gulp.dest("css")); // send them all into css/ folder
+        .pipe(replace(/<\/?style[^>]*>/g, "")) // remove <style> tags
+        .pipe(rename(function (path) {
+            path.extname = ".css"; // preserve base name, only change extension
+        }))
+        .pipe(gulp.dest(src));
 });
 
-// Convert GAS scripts.html → local script.js
+// Convert any HTML with <script> tags → JS, keeping same base name
 gulp.task("gas-to-js", function () {
-    return gulp.src(["dist/scripts.html", '!dist/form.html', '!dist/fallback_students.html', '!dist/script_form.html'])
+    return gulp.src(`${dist}/*.html`, { allowEmpty: true })
+        .pipe(through2.obj(function (file, _, cb) {
+            const contents = file.contents.toString();
+            if (/<script[\s\S]*?>[\s\S]*?<\/script>/i.test(contents)) {
+                this.push(file);
+            }
+            cb();
+        }))
         .pipe(replace(/<\/?script[^>]*>/g, "")) // remove <script> tags
-        .pipe(rename("script.js"))
-        .pipe(gulp.dest("."));
+        .pipe(rename(function (path) {
+            path.extname = ".js"; // preserve base name, only change extension
+        }))
+        .pipe(gulp.dest(src));
 });
 
 // Convert GAS index.html → local index.html (replace include with <link>/<script>)
 gulp.task("gas-to-html", function () {
-    return gulp.src("dist/index.html", { allowEmpty: true })
+    return gulp.src(`${dist}/index.html`, { allowEmpty: true })
         // Convert style includes back to <link>
         .pipe(replace(
             /<\?!= include$'([^']+)'$; \?>/g,
@@ -119,21 +138,44 @@ gulp.task("gas-to-html", function () {
                 return `<script src="${p1}.js"></script>`;
             }
         ))
-        .pipe(gulp.dest("."));
+        .pipe(gulp.dest(src));
 });
 
-// Copy other GAS assets
+// copy *.js to *.gs
+gulp.task("gas-to-gs", function () {
+    return gulp.src(`${dist}/*.js`,
+        { allowEmpty: true }
+    )
+        .pipe(rename(function (path) {
+            path.extname = ".gs";
+        }))
+        .pipe(gulp.dest(src));
+});
+
+// Copy other assets
 gulp.task("gas-assets-to-local", function () {
-    return gulp.src([
-        "dist/**/*",
-        "!dist/index.html",
-        "!dist/styles.html",
-        "!dist/scripts.html"
-    ]).pipe(gulp.dest("."));
+    return gulp.src([`${dist}/**/*`], { allowEmpty: true })
+        .pipe(through2.obj(function (file, _, cb) {
+            if (file.isDirectory()) {
+                this.push(file); // keep folders
+            } else if (/\.html$/i.test(file.path)) {
+                const contents = file.contents.toString();
+                // Only push if it has no <style> or <script> blocks
+                if (!/<style[\s\S]*?>[\s\S]*?<\/style>/i.test(contents) &&
+                    !/<script[\s\S]*?>[\s\S]*?<\/script>/i.test(contents)) {
+                    this.push(file);
+                }
+            } else {
+                // Non-HTML assets always copied
+                this.push(file);
+            }
+            cb();
+        }))
+        .pipe(gulp.dest(src));
 });
 
 // Grouped
-gulp.task("to-local", gulp.series("gas-to-css", "gas-to-js", "gas-to-html", "gas-assets-to-local"));
+gulp.task("to-local", gulp.series("gas-to-css", "gas-to-js", "gas-to-html", "gas-to-gs", "gas-assets-to-local"));
 
 
 

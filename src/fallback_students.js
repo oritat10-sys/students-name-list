@@ -1,3 +1,4 @@
+
 // Mock data fallback
 function getMockStudentData() {
     return {
