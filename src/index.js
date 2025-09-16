@@ -64,7 +64,7 @@
         <div id="mainForm" class="glass-container rounded-lg shadow-lg p-6 mb-8 mt-6">
             <div class="form-section">
                 <div class="form-control">
-                    <label for="teacherName" class="input-label">שם מלא (פרטי + משפחה)
+                    <label for="teacherName" class="input-label">שם המורה (פרטי + משפחה)
                         <span class="text-red-500">*</span></label>
                     <input type="text" id="teacherName" class="input-field" required>
                 </div>

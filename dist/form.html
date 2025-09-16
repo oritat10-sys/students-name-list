@@ -1,5 +1,4 @@
 <script>
-
 const formFields = [
     {
         id: 'helpType',
@@ -8,15 +7,23 @@ const formFields = [
         placeholder: 'בחר סוג מענה',
         options: [
 
+           'שילוב',
+           'אל"ה',
+           'סל אישי',
+           'מורה באמצעות',
             'פרטני-אנגלית',
             'פרטני-מתמטיקה',
             'פרטני-מדעים',
             'פרטני-עברית',
-            'סל אישי',
-            'שילוב',
-            'אל"ה',
+            'פרטני-ערבית',
+            'פרטני-היסטוריה',
+            'פרטני-במקרא',
+            'פרטני-באמנות',
+            'פרטני-כללי',
+            'הסלון',
             'הכלה רגשית',
-            'הכלה לימודית',]
+            'הכלה לימודית',
+            'הכלה בספורט',]
     },
     // {
     //     id: 'grade',
@@ -43,7 +50,7 @@ const formFields = [
         type: 'select',
         label: 'באיזה יום בשבוע אני נותן את המענה?',
         placeholder: 'בחר יום',
-        options: ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי']
+        options: ['א'', 'ב'', 'ג'', 'ד'', 'ה'']
     },
     {
         id: 'hour',
@@ -56,5 +63,4 @@ const formFields = [
 
 // Create a global reference that works in both environments
 globalThis.formFields = formFields;
-
 </script>
