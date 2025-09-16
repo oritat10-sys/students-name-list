@@ -99,6 +99,11 @@ gulp.task("gas-to-js", function () {
     return gulp.src(`${dist}/*.html`, { allowEmpty: true })
         .pipe(through2.obj(function (file, _, cb) {
             const contents = file.contents.toString();
+            // Skip files that start with DOCTYPE (full HTML documents)
+            if (/^\s*<!DOCTYPE\s+html>/i.test(contents)) {
+                cb();
+                return;
+            }
             if (/<script[\s\S]*?>[\s\S]*?<\/script>/i.test(contents)) {
                 this.push(file);
             }
@@ -114,28 +119,28 @@ gulp.task("gas-to-js", function () {
 // Convert GAS index.html → local index.html (replace include with <link>/<script>)
 gulp.task("gas-to-html", function () {
     return gulp.src(`${dist}/index.html`, { allowEmpty: true })
-        // Convert style includes back to <link>
+        // Convert style/script includes back to <link>/<script>
         .pipe(replace(
-            /<\?!= include$'([^']+)'$; \?>/g,
+            /<\?!= include\('([^']+)'\); \?>/g,
             function (match, p1) {
-                // p1 = filename without extension
-                if (p1.match(/\.css$/)) {
-                    // if include accidentally has extension
+                
+                
+                if (p1.endsWith('.css')) {
                     return `<link rel="stylesheet" href="${p1}">`;
+                } else {
+                    return `<script src="${p1}.js"></script>`;
                 }
-                // Assume CSS when referenced in <link>
-                return `<link rel="stylesheet" href="${p1}.css">`;
             }
         ))
-        // Convert script includes back to <script>
+        // Handle includes without extension
         .pipe(replace(
-            /<\?!= include$'([^']+)'$; \?>/g,
+            /<\?!= include\('([^']+)'\); \?>/g,
             function (match, p1) {
-                if (p1.match(/\.js$/)) {
-                    return `<script src="${p1}"></script>`;
+                if (['styles', 'styles_background'].includes(p1)) {
+                    return `<link rel="stylesheet" href="${p1}.css">`;
+                } else {
+                    return `<script src="${p1}.js"></script>`;
                 }
-                // Assume JS for plain "scripts", "main", etc.
-                return `<script src="${p1}.js"></script>`;
             }
         ))
         .pipe(gulp.dest(src));
