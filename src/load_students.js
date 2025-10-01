@@ -1,12 +1,13 @@
 
-// Function to load student data from Google Sheets
+  // Function to load student data from Google Sheets
 function loadStudentsData() {
-    // console.log("Loading students data...");
+    console.log("Loading students data...");
     try {
         google.script.run
             .withSuccessHandler(onStudentsDataLoaded)
             .withFailureHandler(onStudentsDataError)
             .getStudentsData();
+        console.log("data loaded");
     } catch (error) {
         console.error('Error loading students data:', error);
         onStudentsDataError();

@@ -5,14 +5,14 @@
  */
 
 // הגדרות בסיסיות - ה-ID של הגיליון שלך
-const SPREADSHEET_ID = '1DeNVWSqbkrfS_N01kt-ZM60whsnVCKKXg20ZSswJQtY';
+const SPREADSHEET_ID = '1_yiLmG0tQNqmxzcQphFBzR1jB5n6FrXksjApXAPyJDc';
 const MAIN_SHEET_NAME = 'מענים בית ספריים';
 
 // מפת שמות הגליונות לפי שכבות וכיתות
 const SHEET_NAMES = {
-  'ז1': 'ז1', 'ז2': 'ז2', 'ז3': 'ז3', 'ז4': 'ז4', 'ז5': 'ז5', 'ז6': 'ז6', 'ז7': 'ז7',
-  'ח1': 'ח1', 'ח2': 'ח2', 'ח3': 'ח3', 'ח4': 'ח4', 'ח5': 'ח5', 'ח6': 'ח6', 'ח7': 'ח7',
-  'ט1': 'ט1', 'ט2': 'ט2', 'ט3': 'ט3', 'ט4': 'ט4', 'ט5': 'ט5', 'ט6': 'ט6', 'ט7': 'ט7'
+  'ז1': "ז' 1", 'ז2': "ז' 2", 'ז3': "ז' 3", 'ז4': "ז' 4", 'ז5': "ז' 5", 'ז6': "ז' 6", 'ז7': "ז' 7",
+  'ח1': "ח' 1", 'ח2': "ח' 2", 'ח3': "ח' 3", 'ח4': "ח' 4", 'ח5': "ח' 5", 'ח6': "ח' 6", 'ח7': "ח' 7",
+  'ט1': "ט' 1", 'ט2': "ט' 2", 'ט3': "ט' 3", 'ט4': "ט' 4", 'ט5': "ט' 5", 'ט6': "ט' 6", 'ט7': "ט' 7"
 };
 
 /**
@@ -201,12 +201,11 @@ function test() {
       {
         responseType: "שילוב",
         students: [
-          { name: "דן אל על", class: "7", grade: "ט" },
-          { name: "אור אלון", class: "7", grade: "ט" },
-          { name: "לירי דניאל אלטר", class: "7", grade: "ט" },
-          { name: "עידן אליהו", class: "7", grade: "ח" }
+          { name: "פריאל אבו דגה", class: "7", grade: "ט" },
+          { name: "עידן אליהו", class: "7", grade: "ט" },
+          { name: "נויה אשכנזי", class: "7", grade: "ט" }
         ],
-        day: "ראשון",
+        day: "א'",
         hour: "2"
       }
     ]
@@ -272,7 +271,7 @@ function saveToClassSheets(spreadsheet, formData, timestamp) {
 
     // Process each class group
     Object.keys(studentsByClass).forEach(className => {
-      const sheet = spreadsheet.getSheetByName(className);
+      const sheet = spreadsheet.getSheetByName(SHEET_NAMES[className]);
 
       if (!sheet) {
         console.error(`גיליון ${className} לא נמצא`);
@@ -335,17 +334,24 @@ function getResponseColumnIndex(responseType, subject) {
   // מיפוי עמודות (אינדקס מתחיל מ-0, עמודה C = אינדקס 2)
   const columnMapping = {
     // פרטני לפי מקצועות
-    'פרטני-אנגלית': 2,      // עמודה C
-    'פרטני-מתמטיקה': 3,     // עמודה D
-    'פרטני-מדעים': 4,       // עמודה E
-    'פרטני-ערבית': 5,       // עמודה F
+    'פרטני-אנגלית': 3,      // עמודה D
+    'פרטני-מתמטיקה': 4,     // עמודה E
+    'פרטני-מדעים': 5,       // עמודה F
+    'פרטני-ערבית': 6,       // עמודה G
+    'פרטני-היסטוריה': 7,       // עמודה H
+    'פרטני-מקרא': 8,       // עמודה I
+    'פרטני-אמנות': 9,       // עמודה J
+    'פרטני-כללי': 10,       // עמודה K
 
     // מענים אחרים
-    'סל אישי': 6,            // עמודה G
-    'שילוב': 7,              // עמודה H
-    'אל"ה': 8,               // עמודה I
-    'הכלה רגשית': 9,         // עמודה J
-    'הכלה לימודית': 10       // עמודה K
+    'מורה באמצעות': 11,       // עמודה L
+    'סל אישי': 12,            // עמודה M
+    'שילוב': 13,              // עמודה N
+    'אל"ה': 14,               // עמודה O
+    'סלון': 15,       // עמודה P
+    'הכלה רגשית': 16,         // עמודה Q
+    'הכלה לימודית': 17,      // עמודה R
+    'הכלה בספורט': 18       // עמודה S
   };
 
   // אם זה מענה פרטני, צרף את המקצוע
@@ -372,15 +378,20 @@ function findStudentInSheet(data, studentName) {
   const firstPart = nameParts[0];                        // First word
   const lastPart = nameParts[nameParts.length - 1];     // Last word
 
+  // Logger.log("firstPart: "+firstPart)
+  // Logger.log("lastPart: "+lastPart)
   // חיפוש החל מהשורה 4 (אינדקס 3)
   for (let i = 3; i < data.length; i++) {
-    const rowLastName = data[i][0] ? data[i][0].toString().trim() : '';
-    const rowFirstName = data[i][1] ? data[i][1].toString().trim() : '';
+
+    const rowLastName = data[i][1] ? data[i][1].toString().trim() : '';
+    const rowFirstName = data[i][2] ? data[i][2].toString().trim() : '';
 
     if (!rowLastName && !rowFirstName) break; // הגענו לסוף הרשימה
-
+    // Logger.log("rowFirstName: " + rowFirstName)
+    // Logger.log("rowLastName: "+ rowLastName)
     // Check if both parts are contained in the row (simple approach)
     const fullRowName = rowFirstName + ' ' + rowLastName;
+    // Logger.log("fullRowName: "+ fullRowName)
     if (fullRowName.includes(firstPart) && fullRowName.includes(lastPart)) {
       Logger.log("Found student at row " + (i + 1));
       return i;
@@ -412,7 +423,7 @@ function updateStudentResponse(sheet, row, columnIndex, day, hour) {
  * עדכון מידע המורה
  */
 function updateTeacherInfo(sheet, row, teacherName, responseType, subject) {
-  const teacherCell = sheet.getRange(row, 12); // עמודה L
+  const teacherCell = sheet.getRange(row, 20); // עמודה T
   const currentValue = teacherCell.getValue().toString().trim();
 
   // יצירת תיאור המענה
@@ -425,20 +436,14 @@ function updateTeacherInfo(sheet, row, teacherName, responseType, subject) {
 
   let finalValue;
   if (currentValue && currentValue !== '') {
-    // בדיקה אם המורה כבר רשום
-    if (!currentValue.includes(teacherName)) {
-      finalValue = currentValue + ', ' + newTeacherInfo;
-    } else {
-      // המורה כבר רשום, הוסף רק את המענה החדש
-      finalValue = currentValue + ', ' + responseDescription;
-    }
+    finalValue = currentValue + ', ' + teacherName;
   } else {
     finalValue = newTeacherInfo;
   }
 
   teacherCell.setValue(finalValue);
-  teacherCell.setBackground('#fff3cd');
-  teacherCell.setHorizontalAlignment('right');
+  // teacherCell.setBackground('#fff3cd');
+  // teacherCell.setHorizontalAlignment('right');
 }
 
 /**
@@ -731,37 +736,37 @@ function testConnection() {
   }
 }
 
-/**
- * פונקציה לבדיקת שמות הגליונות הקיימים
- */
-function listAllSheets() {
-  try {
-    const spreadsheet = SpreadsheetApp.openById(SPREADSHEET_ID);
-    const sheets = spreadsheet.getSheets();
+// /**
+//  * פונקציה לבדיקת שמות הגליונות הקיימים
+//  */
+// function listAllSheets() {
+//   try {
+//     const spreadsheet = SpreadsheetApp.openById(SPREADSHEET_ID);
+//     const sheets = spreadsheet.getSheets();
 
-    let report = `שמות כל הגליונות בקובץ (${sheets.length} גליונות):\n`;
-    report += '================================\n';
+//     let report = `שמות כל הגליונות בקובץ (${sheets.length} גליונות):\n`;
+//     report += '================================\n';
 
-    sheets.forEach((sheet, index) => {
-      const name = sheet.getName();
-      const rows = sheet.getLastRow();
-      const cols = sheet.getLastColumn();
-      report += `${index + 1}. "${name}" (${rows}x${cols})\n`;
-    });
+//     sheets.forEach((sheet, index) => {
+//       const name = sheet.getName();
+//       const rows = sheet.getLastRow();
+//       const cols = sheet.getLastColumn();
+//       report += `${index + 1}. "${name}" (${rows}x${cols})\n`;
+//     });
 
-    report += '\n\nגליונות שהמערכת מחפשת:\n';
-    report += '=========================\n';
-    Object.values(SHEET_NAMES).forEach((sheetName, index) => {
-      const exists = sheets.find(sheet => sheet.getName() === sheetName);
-      report += `${index + 1}. "${sheetName}" ${exists ? '✅' : '❌'}\n`;
-    });
+//     report += '\n\nגליונות שהמערכת מחפשת:\n';
+//     report += '=========================\n';
+//     Object.values(SHEET_NAMES).forEach((sheetName, index) => {
+//       const exists = sheets.find(sheet => sheet.getName() === sheetName);
+//       report += `${index + 1}. "${sheetName}" ${exists ? '✅' : '❌'}\n`;
+//     });
 
-    return report;
+//     return report;
 
-  } catch (error) {
-    return 'שגיאה בקבלת רשימת גליונות: ' + error.message;
-  }
-}
+//   } catch (error) {
+//     return 'שגיאה בקבלת רשימת גליונות: ' + error.message;
+//   }
+// }
 
 /**
  * פונקציה להתקנה ראשונית

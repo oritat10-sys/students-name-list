@@ -50,7 +50,7 @@ const formFields = [
         type: 'select',
         label: 'באיזה יום בשבוע אני נותן את המענה?',
         placeholder: 'בחר יום',
-        options: ['א'', 'ב'', 'ג'', 'ד'', 'ה'']
+        options: ['א\'', 'ב\'', 'ג\'', 'ד\'', 'ה\'']
     },
     {
         id: 'hour',
