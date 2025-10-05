@@ -85,8 +85,8 @@ function getStudentsData() {
         let row = 3; // שורה 4 באקסל = אינדקס 3 במערך
 
         while (row < data.length) {
-          const lastName = data[row][0] ? data[row][0].toString().trim() : ''; // עמודה A
-          const firstName = data[row][1] ? data[row][1].toString().trim() : ''; // עמודה B
+          const lastName = data[row][1] ? data[row][1].toString().trim() : ''; // עמודה B
+          const firstName = data[row][2] ? data[row][2].toString().trim() : ''; // עמודה C
 
           // בדיקה שיש גם שם משפחה וגם שם פרטי
           if (lastName && firstName) {

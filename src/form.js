@@ -41,7 +41,7 @@ const formFields = [
     {
         id: 'students',
         type: 'search-select',
-        label: 'בחר את התלמיד/ים לו/להם אתה נותן מענה ',
+        label: 'בחר את התלמידים להם אתה נותן מענה זה<br/>כתבו את שם התלמיד ולחצו עליו מתוך הרשימה הנפתחת ',
         placeholder: 'שם התלמיד',
         options: getMockStudentData()
     },
