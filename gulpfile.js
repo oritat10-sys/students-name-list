@@ -99,19 +99,24 @@ gulp.task("gas-to-js", function () {
     return gulp.src(`${dist}/*.html`, { allowEmpty: true })
         .pipe(through2.obj(function (file, _, cb) {
             const contents = file.contents.toString();
+
             // Skip files that start with DOCTYPE (full HTML documents)
             if (/^\s*<!DOCTYPE\s+html>/i.test(contents)) {
                 cb();
                 return;
             }
-            if (/<script[\s\S]*?>[\s\S]*?<\/script>/i.test(contents)) {
+
+            // Only process files that have script tags with actual JavaScript content
+            // Not just script tags referencing external files
+            if (/<script(?![^>]*\bsrc\s*=)[^>]*>[\s\S]*?<\/script>/i.test(contents)) {
                 this.push(file);
             }
             cb();
         }))
-        .pipe(replace(/<\/?script[^>]*>/g, "")) // remove <script> tags
+        .pipe(replace(/<script(?![^>]*\bsrc\s*=)[^>]*>/g, "")) // remove opening script tags (not src ones)
+        .pipe(replace(/<\/script>/g, "")) // remove closing script tags
         .pipe(rename(function (path) {
-            path.extname = ".js"; // preserve base name, only change extension
+            path.extname = ".js";
         }))
         .pipe(gulp.dest(src));
 });
@@ -123,21 +128,11 @@ gulp.task("gas-to-html", function () {
         .pipe(replace(
             /<\?!= include\('([^']+)'\); \?>/g,
             function (match, p1) {
-                
-                
-                if (p1.endsWith('.css')) {
-                    return `<link rel="stylesheet" href="${p1}">`;
-                } else {
-                    return `<script src="${p1}.js"></script>`;
-                }
-            }
-        ))
-        // Handle includes without extension
-        .pipe(replace(
-            /<\?!= include\('([^']+)'\); \?>/g,
-            function (match, p1) {
-                if (['styles', 'styles_background'].includes(p1)) {
-                    return `<link rel="stylesheet" href="${p1}.css">`;
+                // Handle both .css and known style partials
+                if (p1.endsWith('.css') || ['styles', 'styles_background'].includes(p1)) {
+                    // ensure it ends with .css
+                    const href = p1.endsWith('.css') ? p1 : `${p1}.css`;
+                    return `<link rel="stylesheet" href="${href}">`;
                 } else {
                     return `<script src="${p1}.js"></script>`;
                 }
